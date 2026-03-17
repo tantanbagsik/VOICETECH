@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: voice-appointment-bot
+    env: docker
+    repo: https://github.com/tantanbagsik/VOICETECH.git
+    branch: main
+    dockerfilePath: Dockerfile
+    dockerContext: .
+    envVars:
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        value: "587"
+        sync: false
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: NOTIFY_EMAIL_TO
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_FROM_NUMBER
+        sync: false
+    autoDeploy: true
