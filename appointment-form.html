@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book an Appointment</title>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background: #f5f5f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
+    .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 400px; width: 100%; }
+    h2 { margin: 0 0 20px; color: #333; text-align: center; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; color: #555; font-weight: 500; }
+    input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+    input:focus { outline: none; border-color: #4a90d9; }
+    button { width: 100%; padding: 14px; background: #4a90d9; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+    button:hover { background: #357abd; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    .result { margin-top: 20px; padding: 15px; border-radius: 8px; display: none; }
+    .result.success { background: #d4edda; color: #155724; display: block; }
+    .result.error { background: #f8d7da; color: #721c24; display: block; }
+    .appointment-id { font-weight: bold; font-size: 18px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Book an Appointment</h2>
+    <form id="appointmentForm">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="customer_name" required placeholder="John Smith">
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" id="phone" required placeholder="+15551234567">
+      </div>
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="date" required>
+      </div>
+      <div class="form-group">
+        <label>Time</label>
+        <input type="time" id="time" required>
+      </div>
+      <div class="form-group">
+        <label>Reason</label>
+        <input type="text" id="reason" required placeholder="Consultation">
+      </div>
+      <button type="submit" id="submitBtn">Book Appointment</button>
+    </form>
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    const API_URL = 'https://voice-appointment-bot.onrender.com/appointments/confirm';
+    
+    document.getElementById('date').min = new Date().toISOString().split('T')[0];
+    
+    document.getElementById('appointmentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const btn = document.getElementById('submitBtn');
+      const result = document.getElementById('result');
+      
+      const customer_name = document.getElementById('customer_name').value;
+      const phone = document.getElementById('phone').value;
+      const date = document.getElementById('date').value;
+      const time = document.getElementById('time').value;
+      const reason = document.getElementById('reason').value;
+      
+      btn.disabled = true;
+      btn.textContent = 'Booking...';
+      result.className = 'result';
+      result.style.display = 'none';
+      
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customer_name,
+            phone,
+            appointment_at: `${date} ${time}`,
+            reason,
+            confirmed: true
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status === 'confirmed') {
+          result.className = 'result success';
+          result.innerHTML = `✓ Appointment Booked!<br><span class="appointment-id">ID: #${data.appointment_id}</span>`;
+          document.getElementById('appointmentForm').reset();
+        } else {
+          result.className = 'result error';
+          result.textContent = 'Booking failed. Please try again.';
+        }
+      } catch (error) {
+        result.className = 'result error';
+        result.textContent = 'Error connecting to server.';
+      }
+      
+      btn.disabled = false;
+      btn.textContent = 'Book Appointment';
+    });
+  </script>
+</body>
+</html>
