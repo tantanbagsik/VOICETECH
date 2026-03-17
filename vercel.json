@@ -1,0 +1,22 @@
+{
+  "builds": [
+    {
+      "src": "appointment-form.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "index.html",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/appointment-form.html",
+      "dest": "/appointment-form.html"
+    }
+  ]
+}
