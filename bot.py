@@ -7,7 +7,6 @@ from typing import Optional
 
 import dateparser
 import pyttsx3
-import speech_recognition as sr
 
 from appointment_store import Appointment, AppointmentStore
 from notification_service import NotificationService
@@ -27,7 +26,6 @@ class AppointmentDraft:
 
 class VoiceAppointmentBot:
     def __init__(self) -> None:
-        self.recognizer = sr.Recognizer()
         self.tts = pyttsx3.init()
         self.tts.setProperty("rate", 175)
         self.store = AppointmentStore()
@@ -36,20 +34,15 @@ class VoiceAppointmentBot:
 
     def speak(self, text: str) -> None:
         print(f"BOT: {text}")
-        self.tts.say(text)
-        self.tts.runAndWait()
+        try:
+            self.tts.say(text)
+            self.tts.runAndWait()
+        except Exception:
+            pass
 
     def listen(self) -> str:
-        try:
-            with sr.Microphone() as source:
-                self.recognizer.adjust_for_ambient_noise(source, duration=0.7)
-                audio = self.recognizer.listen(source, timeout=8, phrase_time_limit=10)
-            text = self.recognizer.recognize_google(audio)
-            print(f"YOU: {text}")
-            return text.strip()
-        except Exception:
-            typed = input("YOU (typed fallback): ").strip()
-            return typed
+        typed = input("YOU: ").strip()
+        return typed
 
     @staticmethod
     def _extract_phone(text: str) -> Optional[str]:
@@ -85,6 +78,8 @@ class VoiceAppointmentBot:
         if not self.draft.customer_name:
             self.speak("Can I get the customer's full name?")
             self.draft.customer_name = self._extract_name(self.listen())
+            if not self.draft.customer_name:
+                self.draft.customer_name = self.listen().strip().title()
 
         if not self.draft.phone:
             self.speak("Please tell me the best callback phone number.")
