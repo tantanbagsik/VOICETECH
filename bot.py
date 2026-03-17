@@ -6,13 +6,19 @@ from datetime import datetime
 from typing import Optional
 
 import dateparser
-import pyttsx3
+
+# Try to import voice libraries, with fallback
+try:
+    import pyttsx3
+    TTS_AVAILABLE = True
+except ImportError:
+    TTS_AVAILABLE = False
 
 try:
     import speech_recognition as sr
-    VOICE_AVAILABLE = True
+    RECOGNIZER_AVAILABLE = True
 except ImportError:
-    VOICE_AVAILABLE = False
+    RECOGNIZER_AVAILABLE = False
 
 from appointment_store import Appointment, AppointmentStore
 from notification_service import NotificationService
@@ -32,45 +38,60 @@ class AppointmentDraft:
 
 class VoiceAppointmentBot:
     def __init__(self) -> None:
-        self.tts = pyttsx3.init()
-        self.tts.setProperty("rate", 175)
-        
+        self.tts = None
         self.recognizer = None
-        if VOICE_AVAILABLE:
+        self.microphone = None
+        
+        # Initialize TTS
+        if TTS_AVAILABLE:
+            try:
+                self.tts = pyttsx3.init()
+                self.tts.setProperty("rate", 175)
+            except Exception as e:
+                print(f"TTS init error: {e}")
+                self.tts = None
+        
+        # Initialize speech recognizer
+        if RECOGNIZER_AVAILABLE:
             try:
                 self.recognizer = sr.Recognizer()
-            except Exception:
+                self.microphone = sr.Microphone()
+            except Exception as e:
+                print(f"Mic init error: {e}")
                 self.recognizer = None
+                self.microphone = None
         
         self.store = AppointmentStore()
         self.notifications = NotificationService()
         self.draft = AppointmentDraft()
+        
+        print(f"Voice status - TTS: {TTS_AVAILABLE}, Recognizer: {RECOGNIZER_AVAILABLE}")
 
     def speak(self, text: str) -> None:
         print(f"BOT: {text}")
-        try:
-            self.tts.say(text)
-            self.tts.runAndWait()
-        except Exception:
-            pass
+        if self.tts:
+            try:
+                self.tts.say(text)
+                self.tts.runAndWait()
+            except Exception as e:
+                print(f"TTS speak error: {e}")
 
     def listen(self) -> str:
-        if self.recognizer:
+        # Try voice first
+        if self.recognizer and self.microphone:
             try:
-                with sr.Microphone() as source:
-                    self.speak("Listening...")
-                    self.recognizer.adjust_for_ambient_noise(source, duration=0.7)
-                    audio = self.recognizer.listen(source, timeout=10, phrase_time_limit=10)
+                with self.microphone as source:
+                    print("Listening...")
+                    self.recognizer.adjust_for_ambient_noise(source, duration=0.5)
+                    audio = self.recognizer.listen(source, timeout=8, phrase_time_limit=8)
                     text = self.recognizer.recognize_google(audio)
                     print(f"YOU: {text}")
                     return text.strip()
-            except sr.UnknownValueError:
-                self.speak("I didn't catch that. Please type your answer.")
-            except sr.RequestError:
-                self.speak("Speech service unavailable. Please type your answer.")
             except Exception as e:
-                self.speak(f"Voice error: {type(e).__name__}. Please type your answer.")
+                print(f"Voice listen error: {e}")
         
+        # Fallback to typing
+        print("Type your answer:")
         typed = input("YOU (type): ").strip()
         return typed
 
