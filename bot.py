@@ -8,6 +8,12 @@ from typing import Optional
 import dateparser
 import pyttsx3
 
+try:
+    import speech_recognition as sr
+    VOICE_AVAILABLE = True
+except ImportError:
+    VOICE_AVAILABLE = False
+
 from appointment_store import Appointment, AppointmentStore
 from notification_service import NotificationService
 
@@ -28,6 +34,14 @@ class VoiceAppointmentBot:
     def __init__(self) -> None:
         self.tts = pyttsx3.init()
         self.tts.setProperty("rate", 175)
+        
+        self.recognizer = None
+        if VOICE_AVAILABLE:
+            try:
+                self.recognizer = sr.Recognizer()
+            except Exception:
+                self.recognizer = None
+        
         self.store = AppointmentStore()
         self.notifications = NotificationService()
         self.draft = AppointmentDraft()
@@ -41,7 +55,23 @@ class VoiceAppointmentBot:
             pass
 
     def listen(self) -> str:
-        typed = input("YOU: ").strip()
+        if self.recognizer:
+            try:
+                with sr.Microphone() as source:
+                    self.speak("Listening...")
+                    self.recognizer.adjust_for_ambient_noise(source, duration=0.7)
+                    audio = self.recognizer.listen(source, timeout=10, phrase_time_limit=10)
+                    text = self.recognizer.recognize_google(audio)
+                    print(f"YOU: {text}")
+                    return text.strip()
+            except sr.UnknownValueError:
+                self.speak("I didn't catch that. Please type your answer.")
+            except sr.RequestError:
+                self.speak("Speech service unavailable. Please type your answer.")
+            except Exception as e:
+                self.speak(f"Voice error: {type(e).__name__}. Please type your answer.")
+        
+        typed = input("YOU (type): ").strip()
         return typed
 
     @staticmethod
