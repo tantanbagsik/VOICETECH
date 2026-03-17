@@ -1,9 +1,11 @@
-from __future__ import annotations
-
+import os
 import sqlite3
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
+
+
+DEFAULT_DB_PATH = os.path.abspath("appointments.db").replace("\\", "/")
 
 
 @dataclass
@@ -16,8 +18,8 @@ class Appointment:
 
 
 class AppointmentStore:
-    def __init__(self, db_path: str = "appointments.db") -> None:
-        self.db_path = Path(db_path)
+    def __init__(self, db_path: str | None = None) -> None:
+        self.db_path = Path(db_path) if db_path else Path(DEFAULT_DB_PATH)
         self._init_db()
 
     def _connect(self) -> sqlite3.Connection:
