@@ -1,6 +1,16 @@
-SpeechRecognition==3.15.1
-pyttsx3==2.90
-dateparser==1.2.0
-twilio==9.3.2
-flask==3.1.0
-pyaudio
+# Voice Bot Dependencies
+# Install ALL at once with: pip install -r requirements.txt
+
+# Core
+SpeechRecognition>=3.15.0
+pyttsx3>=2.90
+dateparser>=1.2.0
+
+# For local voice bot (optional - may need system audio libs)
+# pip install pyaudio
+
+# For API server (optional)
+# pip install flask twilio
+
+# Optional: For notifications
+# pip install twilio
